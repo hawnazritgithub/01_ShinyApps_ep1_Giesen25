@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID ROLL OUT Study Dashboard | AMS Implementation</title>
+    <!-- Tailwind CSS for Minimalist Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for Visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: all 0.2s; border: 1px solid #e2e8f0; }
+        .card:hover { box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 2.5rem; font-weight: 700; letter-spacing: -0.025em; }
+        .trend-up { color: #10b981; }
+        .trend-down { color: #ef4444; }
+        .badge { padding: 4px 8px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+        .badge-level-e { background: #fee2e2; color: #991b1b; } /* Poor */
+        .badge-level-b { background: #dcfce7; color: #166534; } /* Good */
+        .badge-level-c { background: #fef9c3; color: #854d0e; } /* Intermediate */
+    </style>
+</head>
+<body class="p-6 md:p-10">
+
+    <!-- Header Section -->
+    <header class="mb-10 max-w-7xl mx-auto">
+        <div class="flex justify-between items-start">
+            <div>
+                <p class="text-sm font-semibold text-blue-600 uppercase tracking-wider mb-1">ShinyPapers Ep 1</p>
+                <h1 class="text-3xl font-bold text-slate-900">Antimicrobial Stewardship in German Non-University Hospitals</h1>
+                <p class="text-slate-500 mt-2 max-w-3xl">
+                    Visualizing the impact of the <strong>ID ROLL OUT</strong> multifaceted intervention study (2021-2023). 
+                    Data derived from <em>Giesen et al., Infection (2025)</em>.
+                </p>
+            </div>
+            <div class="hidden md:block text-right">
+                <div class="text-sm text-slate-400">Study Cohort</div>
+                <div class="font-bold text-slate-700">10 Hospitals</div>
+                <div class="text-sm text-slate-400 mt-1">Bed Median</div>
+                <div class="font-bold text-slate-700">401 Beds</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Key Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto mb-10">
+        <!-- Baseline Card -->
+        <div class="card p-6 border-l-4 border-slate-400">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-slate-500 uppercase">Baseline (2021)</h3>
+                <span class="badge badge-level-e">Level E (Poor)</span>
+            </div>
+            <div class="stat-value text-slate-700">37%</div>
+            <p class="text-sm text-slate-500 mt-2">Median AMS-GER Score</p>
+            <div class="mt-4 text-xs text-slate-400">
+                Range: 20–60%<br>
+                9/10 hospitals at lowest level
+            </div>
+        </div>
+
+        <!-- Intervention Card -->
+        <div class="card p-6 border-l-4 border-blue-500">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-blue-600 uppercase">Intervention (2022)</h3>
+                <span class="badge badge-level-b">Level B (Good)</span>
+            </div>
+            <div class="stat-value text-blue-600">76% <i class="ph ph-arrow-up-right text-2xl"></i></div>
+            <p class="text-sm text-slate-500 mt-2">Median AMS-GER Score</p>
+            <div class="mt-4 text-xs text-slate-400">
+                Increase: +39 percentage points<br>
+                All hospitals improved significantly
+            </div>
+        </div>
+
+        <!-- Follow-Up Card -->
+        <div class="card p-6 border-l-4 border-amber-500">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-sm font-bold text-amber-600 uppercase">Follow-up (2023)</h3>
+                <span class="badge badge-level-c">Level C/D</span>
+            </div>
+            <div class="stat-value text-amber-600">63% <i class="ph ph-arrow-down-right text-2xl"></i></div>
+            <p class="text-sm text-slate-500 mt-2">Median AMS-GER Score</p>
+            <div class="mt-4 text-xs text-slate-400">
+                Decrease: -13 percentage points<br>
+                Decline observed in all hospitals
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Area -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+        
+        <!-- Chart 1: The Sustainability Gap -->
+        <div class="card p-6">
+            <h3 class="text-lg font-bold text-slate-800 mb-2">The Impact of Staffing on Sustainability</h3>
+            <p class="text-sm text-slate-500 mb-6">Comparison of score retention between hospitals that maintained AMS staffing vs. those that did not.</p>
+            <div class="relative h-64">
+                <canvas id="staffingChart"></canvas>
+            </div>
+            <div class="mt-4 bg-slate-50 p-3 rounded-lg text-xs text-slate-600 border border-slate-100">
+                <strong>Insight:</strong> Hospitals with ongoing full-time AMS/ID staffing (4/10) experienced a much smaller decrease (-13%) compared to those without (-32%).
+            </div>
+        </div>
+
+        <!-- Chart 2: Subcategory Analysis (Radar) -->
+        <div class="card p-6">
+            <div class="flex justify-between items-center mb-2">
+                <h3 class="text-lg font-bold text-slate-800">AMS-GER Subcategory Performance</h3>
+                <select id="radarSelector" class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 p-1 bg-white border">
+                    <option value="all">Compare All Phases</option>
+                    <option value="baseline">Baseline Only</option>
+                    <option value="intervention">Intervention Only</option>
+                </select>
+            </div>
+            <p class="text-sm text-slate-500 mb-4">Breakdown of structural, resource, and action-based scores.</p>
+            <div class="relative h-64 flex justify-center">
+                <canvas id="radarChart"></canvas>
+            </div>
+             <div class="mt-4 text-xs text-center text-slate-400">
+                The "Actions (Evaluation)" category saw the steepest decline after intervention support ended.
+            </div>
+        </div>
+
+        <!-- Chart 3: Overall Trajectory -->
+        <div class="card p-6 lg:col-span-2">
+            <h3 class="text-lg font-bold text-slate-800 mb-4">Longitudinal Score Trajectory (Median & Range)</h3>
+            <div class="relative h-72">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer / Methodology -->
+    <footer class="max-w-7xl mx-auto mt-10 mb-10 border-t pt-6 text-slate-500 text-sm">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <h4 class="font-bold text-slate-700">About the AMS-GER Score</h4>
+                <p class="mt-1">Adapted from the French ICATB.2 score. Ranges 0-100%. <br>
+                <strong>Categories:</strong> Framework (16pts), Resources (38pts), Prevention (18pts), Surveillance (10pts), Evaluation/PPS (18pts).</p>
+            </div>
+            <div class="md:text-right">
+                <h4 class="font-bold text-slate-700">Source</h4>
+                <p class="mt-1">
+                    <em>Antimicrobial Stewardship in German non-university hospitals...</em><br>
+                    R. Giesen et al. (2025). Infection. <br>
+                    <a href="https://doi.org/10.1007/s15010-025-02658-x" target="_blank" class="text-blue-500 hover:underline">10.1007/s15010-025-02658-x</a>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chart Logic -->
+    <script>
+        // --- Data Configuration ---
+        const phases = ['Baseline (2021)', 'Intervention (2022)', 'Follow-up (2023)'];
+        
+        // Median Scores
+        const medianData = [37, 76, 63];
+        const rangeMin = [20, 62, 48];
+        const rangeMax = [60, 86, 80];
+
+        // Staffing Comparison Data (Extracted from Page 6 text)
+        const staffingYes = [34, 78, 65]; // Ongoing Staffing
+        const staffingNo = [42, 85, 53];  // No Ongoing Staffing
+
+        // Subcategory Data (Approximate % based on Fig 2 and Text)
+        // Order: Framework, Resources, Prevention, Surveillance, Evaluation
+        const subDataBaseline = [40, 30, 45, 20, 10]; 
+        const subDataIntervention = [95, 70, 75, 70, 80]; 
+        const subDataFollowup = [80, 50, 75, 50, 30]; 
+
+        // --- Chart 1: Staffing Impact (Line) ---
+        const ctxStaffing = document.getElementById('staffingChart').getContext('2d');
+        new Chart(ctxStaffing, {
+            type: 'line',
+            data: {
+                labels: phases,
+                datasets: [
+                    {
+                        label: 'With Ongoing Staffing (n=4)',
+                        data: staffingYes,
+                        borderColor: '#10b981', // Green
+                        backgroundColor: '#10b981',
+                        borderWidth: 2,
+                        tension: 0.1
+                    },
+                    {
+                        label: 'Without Ongoing Staffing (n=6)',
+                        data: staffingNo,
+                        borderColor: '#ef4444', // Red
+                        backgroundColor: '#ef4444',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100, title: { display: true, text: 'AMS-GER Score (%)' } }
+                }
+            }
+        });
+
+        // --- Chart 2: Radar Chart ---
+        const ctxRadar = document.getElementById('radarChart').getContext('2d');
+        const radarChart = new Chart(ctxRadar, {
+            type: 'radar',
+            data: {
+                labels: ['Framework', 'Resources', 'Action: Prevention', 'Action: Surveillance', 'Action: Evaluation'],
+                datasets: [
+                    {
+                        label: 'Baseline',
+                        data: subDataBaseline,
+                        borderColor: '#94a3b8',
+                        backgroundColor: 'rgba(148, 163, 184, 0.2)',
+                    },
+                    {
+                        label: 'Intervention',
+                        data: subDataIntervention,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    },
+                    {
+                        label: 'Follow-up',
+                        data: subDataFollowup,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.0)', // Transparent fill to avoid clutter
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { display: true },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                },
+                plugins: {
+                    legend: { display: true, position: 'bottom', labels: { boxWidth: 10 } }
+                }
+            }
+        });
+
+        // Simple filter logic for Radar Chart
+        document.getElementById('radarSelector').addEventListener('change', function(e) {
+            const val = e.target.value;
+            radarChart.data.datasets.forEach(ds => ds.hidden = true);
+            
+            if(val === 'all') {
+                radarChart.data.datasets.forEach(ds => ds.hidden = false);
+            } else if (val === 'baseline') {
+                radarChart.data.datasets[0].hidden = false;
+            } else if (val === 'intervention') {
+                radarChart.data.datasets[1].hidden = false;
+            }
+            radarChart.update();
+        });
+
+        // --- Chart 3: Main Trend (Bar with Error-like visualization) ---
+        // Note: Chart.js "floating bars" can simulate ranges
+        const ctxTrend = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctxTrend, {
+            type: 'bar',
+            data: {
+                labels: phases,
+                datasets: [
+                    {
+                        label: 'Median Score',
+                        data: medianData,
+                        type: 'line',
+                        borderColor: '#1e293b',
+                        backgroundColor: '#1e293b',
+                        borderWidth: 2,
+                        tension: 0,
+                        order: 1
+                    },
+                    {
+                        label: 'Score Range (Min-Max)',
+                        data: [
+                            [20, 60], // Baseline Range
+                            [62, 86], // Intervention Range
+                            [48, 80]  // Follow-up Range
+                        ],
+                        backgroundColor: [
+                            'rgba(148, 163, 184, 0.5)',
+                            'rgba(59, 130, 246, 0.5)', 
+                            'rgba(245, 158, 11, 0.5)'
+                        ],
+                        borderWidth: 0,
+                        barPercentage: 0.3,
+                        order: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (context.dataset.type === 'line') {
+                                    return `Median: ${context.raw}%`;
+                                }
+                                return `Range: ${context.raw[0]}% - ${context.raw[1]}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100,
+                        title: { display: true, text: 'AMS-GER Score (%)' }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
